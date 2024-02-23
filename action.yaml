@@ -121,5 +121,6 @@ runs:
           fi
           if [ "${{ inputs['ssh'] }}" = true ]; then
             ADDITIONAL_ARGS+=" --ssh"
+            echo "with SSH"
           fi
           timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-routes ${ADDITIONAL_ARGS}
