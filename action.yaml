@@ -104,7 +104,7 @@ runs:
       - name: Start Tailscale Daemon
         shell: bash
         run: |
-          if [ "${{ inputs['container-mode'] }}" = true ]; then
+          if [ ${{ "${{ inputs.containerMode }}" = true }} ]; then
             sudo -E tailscaled --state=mem: --tun=userspace-networking --socks5-server=localhost:1055 --outbound-http-proxy-listen=localhost:1055 2>~/tailscaled.log &
           else
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
@@ -128,7 +128,7 @@ runs:
             TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
-          if [ inputs.debugEnabled ]; then
+          if [ "${{ inputs.debugEnabled }}" = true ]; then
             sudo apt-get update
             sudo apt-get -y install openssh-server >> /dev/null
             ADDITIONAL_ARGS+=" --ssh"
