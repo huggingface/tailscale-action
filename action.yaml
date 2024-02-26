@@ -69,7 +69,7 @@ runs:
         # if the TS KEY is the SSHed one, and debug mode is not enabled, so need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
-        if: ${{ inputs.debugEnabled == 'true' }}
+        if: ${{ inputs.debugEnabled == '' }}
         shell: bash
         run: |
           echo "Skip Tailscale"
