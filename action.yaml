@@ -197,4 +197,16 @@ runs:
             }
         env:
           SLACK_BOT_TOKEN: ${{ inputs.slackToken }}
+      
+      - name: Show debug infos on github outputs
+        if: ${{ inputs.debugEnabled || inputs.debug}}
+        shell: bash
+        run: |
+          if [ "${{ inputs['containerMode'] }}" = true ]; then
+            echo "WAN IP (userspace mode)"
+            curl --proxy http://localhost:1055 ifconfig.me/ip
+          else
+            echo "WAN IP"
+            curl ifconfig.me/ip
+          fi
 
