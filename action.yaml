@@ -53,6 +53,7 @@ inputs:
     required: false
 runs:
     using: 'composite'
+    if: ${{ inputs.debugEnabled }}
     steps:
       - name: Check Runner OS
         if: ${{ runner.os != 'Linux' }}
