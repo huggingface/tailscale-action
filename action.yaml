@@ -75,7 +75,7 @@ runs:
           echo "Continue Tailscale"
           exit 0
       - name: Download Tailscale
-        needs: check-ts-key
+        if: ${{ success() }}
         shell: bash
         id: download
         env:
