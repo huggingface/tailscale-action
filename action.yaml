@@ -28,11 +28,11 @@ inputs:
     description: 'Expected SHA256 checksum of the tarball.'
     required: false
     default: 'a580ac9947c291c4928f5bd6af66c6556355c5ea59b1a0172ab62a9b62d6bd77'
-  container-mode:
+  containerMode:
     description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible)'
     type: boolean
     required: false
-    default: false
+    default: true
   debug:
     description: 'This mode generate the tailscale bug report'
     type: boolean
