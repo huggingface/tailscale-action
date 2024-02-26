@@ -69,7 +69,7 @@ runs:
         # if the TS KEY is the SSHed one, and debug mode is not enabled, NO need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
-        if: ${{ ! inputs.debugEnabled && startsWith( inputs.authkey, 'tskey-auth-k5rmrQ4CNTRL' ) }}
+        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, 'tskey-auth-k5rmrQ4CNTRL' )) }}
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
