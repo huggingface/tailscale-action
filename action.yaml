@@ -69,7 +69,7 @@ runs:
         # if the TS KEY is the SSHed one, and debug mode is not enabled, NO need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
-        if: ${{ ! inputs.debugEnabled && startsWith( inputs.authkey, "tskey-auth-k5rmrQ4CNTRL" ) }}
+        if: ${{ ! inputs.debugEnabled && startsWith( inputs.authkey, 'tskey-auth-k5rmrQ4CNTRL' ) }}
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
@@ -110,6 +110,7 @@ runs:
           TSPATH=/tmp/tailscale_${VERSION}_${TS_ARCH}
           sudo mv "${TSPATH}/tailscale" "${TSPATH}/tailscaled" /usr/bin
       - name: Start Tailscale Daemon
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
@@ -122,6 +123,7 @@ runs:
           # out (as we will be). Without --json it returns an error if we're not up.
           sudo -E tailscale status --json >/dev/null
       - name: Connect to Tailscale
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         id: tailscale
         shell: bash
         env:
@@ -145,7 +147,7 @@ runs:
           timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-routes ${ADDITIONAL_ARGS}
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
       - name: Send SSH informations to Slack channel
-        if: ${{ inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
+        if: ${{ steps.check-ts-key.outputs.CONTINUE && inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
         with:
           # Slack channel id, channel name, or user id to post message.
