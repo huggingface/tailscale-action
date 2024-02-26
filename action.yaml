@@ -146,20 +146,41 @@ runs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              
               "blocks": [
                 {
-                  "type": "section",
+                  "type": "header",
                   "text": {
-                    "type": "mrkdwn",
-                    "text": "Runner in debug mode for `${{ github.workflow }}` - Job `${{ github.job}}`on `${{ github.repository }}`"
+                    "type": "plain_text",
+                    "text": "New Job started in debug mode ",
+                    "emoji": true
                   }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n `${{ github.repository }}`"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n `${{ github.workflow }}`"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Started by:*\n ${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job:*\n `${{ github.job}}`"
+                    }
+                  ]
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Initiated by ${{ github.actor }}. Please start your VPN (tailscale) and : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
+                    "text": "start your VPN (tailscale) and : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
                   }
                 }
               ]
