@@ -146,13 +146,20 @@ runs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "Runner in debug mode for `${{ github.workflow }}` on `${{ github.action_repository }}`",
+              
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Initiated by ${{ github.actor }} : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
+                    "text": "Runner in debug mode for `${{ github.workflow }}` on `${{ github.action_repository }}`"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Initiated by ${{ github.actor }}. Please start your VPN (tailscale) and : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
                   }
                 }
               ]
