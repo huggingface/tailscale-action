@@ -120,6 +120,8 @@ runs:
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
           if [ "${{ inputs['ssh'] }}" = true ]; then
+            apt-get update
+            apt-get install openssh-server
             ADDITIONAL_ARGS+=" --ssh"
             echo "with SSH"
           fi
