@@ -121,7 +121,7 @@ runs:
           fi
           if [ "${{ inputs['ssh'] }}" = true ]; then
             sudo apt-get update
-            sudo apt-get -y install openssh-server
+            sudo apt-get -y install openssh-server >> /dev/null
             ADDITIONAL_ARGS+=" --ssh"
             echo "with SSH"
           fi
