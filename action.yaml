@@ -199,7 +199,7 @@ runs:
           SLACK_BOT_TOKEN: ${{ inputs.slackToken }}
       
       - name: Show debug infos on github outputs
-        if: ${{ inputs.debugEnabled || inputs.debug}}
+        if: ${{ inputs.debugEnabled == 'true' || inputs.debug == 'true'}}
         shell: bash
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
