@@ -73,7 +73,7 @@ runs:
         shell: bash
         run: |
           echo "Skip Tailscale"
-          exit 1
+          exit 0
       - name: Download Tailscale
         shell: bash
         id: download
