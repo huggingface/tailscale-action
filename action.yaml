@@ -38,7 +38,7 @@ inputs:
     type: boolean
     required: false
     default: false
-  ssh:
+  debug_enabled:
     description: 'This mode will allow to SSH to the runner'
     type: boolean
     required: false
@@ -128,7 +128,7 @@ runs:
             TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
-          if [ "${{ inputs['ssh'] }}" = true ]; then
+          if [ "${{ inputs['debug_enabled'] }}" = true ]; then
             sudo apt-get update
             sudo apt-get -y install openssh-server >> /dev/null
             ADDITIONAL_ARGS+=" --ssh"
@@ -137,7 +137,7 @@ runs:
           timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-routes ${ADDITIONAL_ARGS}
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
       - name: Send SSH informations to Slack channel
-        if: ${{ inputs.slackChannel != ''}}
+        if: ${{ inputs.slackChannel != '' && inputs.debug_enabled == true}}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
         with:
           # Slack channel id, channel name, or user id to post message.
