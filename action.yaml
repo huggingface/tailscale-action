@@ -104,7 +104,7 @@ runs:
       - name: Start Tailscale Daemon
         shell: bash
         run: |
-          if [ ${{ "${{ inputs.containerMode }}" = true }} ]; then
+          if [ "${{ inputs.containerMode }}" = true }} ]; then
             sudo -E tailscaled --state=mem: --tun=userspace-networking --socks5-server=localhost:1055 --outbound-http-proxy-listen=localhost:1055 2>~/tailscaled.log &
           else
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
