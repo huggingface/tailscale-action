@@ -152,7 +152,7 @@ runs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Runner in debug mode for `${{ github.workflow }}` on `${{ github.action_repository }}`"
+                    "text": "Runner in debug mode for `${{ github.workflow }}` - Job `${{ github.job}}`on `${{ github.repository }}`"
                   }
                 },
                 {
