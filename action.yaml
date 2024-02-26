@@ -53,7 +53,6 @@ inputs:
     required: false
 runs:
     using: 'composite'
-    if: ${{ inputs.debugEnabled }}
     steps:
       - name: Check Runner OS
         if: ${{ runner.os != 'Linux' }}
@@ -67,16 +66,15 @@ runs:
         run: |
           echo "::error title=⛔ error hint::OAuth identity empty, Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/oauth-clients"
           exit 1
-        # if the TS KEY is the SSHed one, and debug mode is not enabled, so need to run tailscale.
+        # if the TS KEY is the SSHed one, and debug mode is not enabled, need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
         if: ${{ inputs.debugEnabled }}
         shell: bash
         run: |
-          echo "Continue Tailscale"
-          exit 0
+          echo "CONTINUE=true"  >> $GITHUB_OUTPUT
       - name: Download Tailscale
-        if: ${{ success() }}
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         id: download
         env:
