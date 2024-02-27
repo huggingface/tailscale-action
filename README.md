@@ -35,9 +35,9 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
 ```
 
 
-#€ Others options
-`containerMode` is by default to True, because on Kubernetes, runners don't have access to TUN interface
-`debugEnabled` is provided by secrets.ACTIONS_STEP_DEBUG [Enabling debug logging feature](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging)
-`slackChannel` and `slackToken` are used to send SSH informations on slack channel
-`debug` is used to print out the WAN IP of tailscale tunnel
-`version` is used to overwrite the default version use in this action. You will need to provide `sha256sum` as well.
+## Others options
+- `containerMode` is by default to True, because on Kubernetes, runners don't have access to TUN interface
+- `debugEnabled` is provided by secrets.ACTIONS_STEP_DEBUG [Enabling debug logging feature](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging)
+- `slackChannel` and `slackToken` are used to send SSH informations on slack channel
+- `debug` is used to print out the WAN IP of tailscale tunnel
+- `version` is used to overwrite the default version use in this action. You will need to provide `sha256sum` as well.
