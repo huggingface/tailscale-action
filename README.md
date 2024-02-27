@@ -18,11 +18,11 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
 
 # Log in SSH on the runner in order to debug the workflow
 
-Add this step to your workflow (`TAILSCALE_SSH_AUTHKEY`, `SLACK_CIFEEDBACK_CHANNEL`, `SLACK_CIFEEDBACK_BOT_TOKEN` already available on all repos)
-Re-Run your Job with `Enable debug logging` on the github popup
-Join the slack channel #github-runners, you will receive a slack message.
+- Add this step to your workflow (`TAILSCALE_SSH_AUTHKEY`, `SLACK_CIFEEDBACK_CHANNEL`, `SLACK_CIFEEDBACK_BOT_TOKEN` already available on all repos)
+- Re-Run your Job with `Enable debug logging` on the github popup
+- Join the slack channel #github-runners, you will receive a slack message.
 
-WARNING : if you have a workflow with a lot of jobs, don't run your workflow with `Enable debug logging`
+**WARNING : if you have a workflow with a lot of jobs, don't run your workflow with `Enable debug logging`**
 
 ```yaml
   - name: Tailscale
