@@ -29,9 +29,9 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
     uses: huggingface/tailscale-action@main
     with:
       authkey: ${{ secrets.TAILSCALE_SSH_AUTHKEY }}
-       debugEnabled: ${{ secrets.ACTIONS_STEP_DEBUG }}
-       slackChannel: ${{ secrets.SLACK_CIFEEDBACK_CHANNEL }}
-       slackToken: ${{ secrets.SLACK_CIFEEDBACK_BOT_TOKEN }}
+      debugEnabled: ${{ secrets.ACTIONS_STEP_DEBUG }}
+      slackChannel: ${{ secrets.SLACK_CIFEEDBACK_CHANNEL }}
+      slackToken: ${{ secrets.SLACK_CIFEEDBACK_BOT_TOKEN }}
 ```
 
 
@@ -41,3 +41,11 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
 - `slackChannel` and `slackToken` are used to send SSH informations on slack channel
 - `debug` is used to print out the WAN IP of tailscale tunnel
 - `version` is used to overwrite the default version use in this action. You will need to provide `sha256sum` as well.
+
+You can add this step at the end of your job, if you want to keep the session alive (don't forget to logoff from the runner at the end)
+```yaml
+  - name: Wait for SSH
+    run : |
+      sleep 30s
+      while [ "$(last | grep '^runner.*still logged in$')" ]; do sleep 1m; done
+```
