@@ -1,0 +1,212 @@
+# Copyright (c) Tailscale Inc & AUTHORS
+# SPDX-License-Identifier: BSD-3-Clause
+#
+name: 'Connect Tailscale'
+description: 'Connect your GitHub Action workflow to Tailscale'
+branding:
+  icon: 'arrow-right-circle'
+  color: 'gray-dark'
+inputs:
+  authkey:
+    description: 'Your Tailscale authentication key, from the admin panel.'
+    required: false
+    deprecationMessage: 'An OAuth API client https://tailscale.com/s/oauth-clients is recommended instead of an authkey'
+  oauth-client-id:
+    description: 'Your Tailscale OAuth Client ID.'
+    required: false
+  oauth-secret:
+    description: 'Your Tailscale OAuth Client Secret.'
+    required: false
+  tags:
+    description: 'Comma separated list of Tags to be applied to nodes. The OAuth client must have permission to apply these tags.'
+    required: false
+  version:
+    description: 'Tailscale version to use.'
+    required: true
+    default: '1.58.2'
+  sha256sum:
+    description: 'Expected SHA256 checksum of the tarball.'
+    required: false
+    default: 'a580ac9947c291c4928f5bd6af66c6556355c5ea59b1a0172ab62a9b62d6bd77'
+  containerMode:
+    description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible)'
+    type: boolean
+    required: false
+    default: true
+  debug:
+    description: 'This mode generate the tailscale bug report'
+    type: boolean
+    required: false
+    default: false
+  debugEnabled:
+    description: 'This mode will allow to SSH to the runner'
+    type: boolean
+    required: false
+    default: false
+  slackChannel:
+    description: 'Provide Slack Channel to send SSH information'
+    type: string
+    required: false
+  slackToken:
+    description: 'Slack Token to send message'
+    type: string
+    required: false
+runs:
+    using: 'composite'
+    steps:
+      - name: Check Runner OS
+        if: ${{ runner.os != 'Linux' }}
+        shell: bash
+        run: |
+          echo "::error title=⛔ error hint::Support Linux Only"
+          exit 1
+      - name: Check Auth Info Empty
+        if: ${{ inputs.authkey == '' && (inputs['oauth-secret'] == '' || inputs.tags == '') }}
+        shell: bash
+        run: |
+          echo "::error title=⛔ error hint::OAuth identity empty, Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/oauth-clients"
+          exit 1
+        # if the TS KEY is the SSHed one, and debug mode is not enabled, NO need to run tailscale.
+      - name: Check TS Auth Key
+        id: check-ts-key
+        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, 'tskey-auth-k5rmrQ4CNTRL' )) }}
+        shell: bash
+        run: |
+          echo "CONTINUE=true"  >> $GITHUB_OUTPUT
+      - name: Download Tailscale
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
+        shell: bash
+        id: download
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA256SUM: ${{ inputs.sha256sum }}
+        run: |
+          if [ ${{ runner.arch }} = "ARM64" ]; then
+            TS_ARCH="arm64"
+          elif [ ${{ runner.arch }} = "ARM" ]; then
+            TS_ARCH="arm"
+          elif [ ${{ runner.arch }} = "X86" ]; then
+            TS_ARCH="386"
+          elif [ ${{ runner.arch }} = "X64" ]; then
+            TS_ARCH="amd64"
+          else
+            TS_ARCH="amd64"
+          fi
+          MINOR=$(echo "$VERSION" | awk -F '.' {'print $2'})
+          if [ $((MINOR % 2)) -eq 0 ]; then
+            URL="https://pkgs.tailscale.com/stable/tailscale_${VERSION}_${TS_ARCH}.tgz"
+          else
+            URL="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_${TS_ARCH}.tgz"
+          fi
+          if ! [[ "$SHA256SUM" ]] ; then
+            SHA256SUM="$(curl -H user-agent:tailscale-github-action -L "${URL}.sha256")"
+          fi
+          curl -H user-agent:tailscale-github-action -L "$URL" -o tailscale.tgz --max-time 300
+          echo "Expected sha256: $SHA256SUM"
+          echo "Actual sha256: $(sha256sum tailscale.tgz)"
+          echo "$SHA256SUM  tailscale.tgz" | sha256sum -c
+          tar -C /tmp -xzf tailscale.tgz
+          rm tailscale.tgz
+          TSPATH=/tmp/tailscale_${VERSION}_${TS_ARCH}
+          sudo mv "${TSPATH}/tailscale" "${TSPATH}/tailscaled" /usr/bin
+      - name: Start Tailscale Daemon
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
+        shell: bash
+        run: |
+          if [ "${{ inputs['containerMode'] }}" = true ]; then
+            sudo -E tailscaled --state=mem: --tun=userspace-networking --socks5-server=localhost:1055 --outbound-http-proxy-listen=localhost:1055 2>~/tailscaled.log &
+          else
+            sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
+          fi
+          # And check that tailscaled came up. The CLI will block for a bit waiting
+          # for it. And --json will make it exit with status 0 even if we're logged
+          # out (as we will be). Without --json it returns an error if we're not up.
+          sudo -E tailscale status --json >/dev/null
+      - name: Connect to Tailscale
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
+        id: tailscale
+        shell: bash
+        env:
+          TAILSCALE_AUTHKEY: ${{ inputs.authkey }}
+          HOSTNAME: ${{ inputs.hostname }}
+          TS_EXPERIMENT_OAUTH_AUTHKEY: true
+        run: |
+          if [ -z "${HOSTNAME}" ]; then
+            HOSTNAME="github-$(cat /etc/hostname)"
+          fi
+          if [ -n "${{ inputs['oauth-secret'] }}" ]; then
+            TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
+            TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
+          fi
+          if [ "${{ inputs['debugEnabled'] }}" = true ]; then
+            sudo apt-get update
+            sudo apt-get -y install openssh-server >> /dev/null
+            ADDITIONAL_ARGS+=" --ssh"
+            echo "with SSH"
+          fi
+          timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-routes ${ADDITIONAL_ARGS}
+          echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
+      - name: Send SSH informations to Slack channel
+        if: ${{ steps.check-ts-key.outputs.CONTINUE && inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
+        with:
+          # Slack channel id, channel name, or user id to post message.
+          # See also: https://api.slack.com/methods/chat.postMessage#channels
+          channel-id: ${{ inputs.slackChannel }}
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "New Job started in debug mode ",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n `${{ github.repository }}`"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n `${{ github.workflow }}`"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Started by:*\n ${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job:*\n `${{ github.job}}`"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "start your VPN (tailscale) and : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ inputs.slackToken }}
+      
+      - name: Show debug infos on github outputs
+        if: ${{ inputs.debugEnabled == 'true' || inputs.debug == 'true'}}
+        shell: bash
+        run: |
+          if [ "${{ inputs['containerMode'] }}" = true ]; then
+            echo "WAN IP (userspace mode)"
+            curl --proxy http://localhost:1055 ifconfig.me/ip
+          else
+            echo "WAN IP"
+            curl ifconfig.me/ip
+          fi
+
