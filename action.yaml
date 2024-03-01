@@ -118,7 +118,7 @@ runs:
             sudo mkdir /dev/net
             sudo mknod /dev/net/tun c 10 200
             sudo apt-get update
-            sudo ap-get install iptables
+            sudo apt-get install iptables
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           else
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
