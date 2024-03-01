@@ -209,7 +209,8 @@ runs:
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
             echo "WAN IP (userspace mode)"
-            curl --proxy http://localhost:1055 ifconfig.me/ip
+            #curl --proxy http://localhost:1055 ifconfig.me/ip
+            curl ifconfig.me/ip
           else
             echo "WAN IP"
             curl ifconfig.me/ip
