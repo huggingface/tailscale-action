@@ -114,7 +114,11 @@ runs:
         shell: bash
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
-            sudo -E tailscaled --state=mem: --tun=userspace-networking --socks5-server=localhost:1055 --outbound-http-proxy-listen=localhost:1055 2>~/tailscaled.log &
+            sudo mkdir /dev/net
+            sudo mknod /dev/net/tun c 10 200
+            sudo apt-get update
+            sudo apt-get install -y iptables
+            sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           else
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           fi
@@ -203,8 +207,8 @@ runs:
         shell: bash
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
-            echo "WAN IP (userspace mode)"
-            curl --proxy http://localhost:1055 ifconfig.me/ip
+            echo "WAN IP"
+            curl ifconfig.me/ip
           else
             echo "WAN IP"
             curl ifconfig.me/ip
