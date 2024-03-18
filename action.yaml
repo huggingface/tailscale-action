@@ -114,7 +114,7 @@ runs:
         shell: bash
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
-            sudo mkdir /dev/net
+            sudo mkdir -p /dev/net
             sudo mknod /dev/net/tun c 10 200
             sudo apt-get update
             sudo apt-get install -y iptables
