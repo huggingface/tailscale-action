@@ -115,7 +115,10 @@ runs:
         run: |
           if [ "${{ inputs['containerMode'] }}" = true ]; then
             sudo mkdir -p /dev/net
-            sudo mknod /dev/net/tun c 10 200
+            if [ ! -e /dev/net/tun ]
+            then
+              sudo mknod /dev/net/tun c 10 200
+            fi
             sudo apt-get update
             sudo apt-get install -y iptables
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
