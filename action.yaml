@@ -73,13 +73,18 @@ runs:
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
-      - name: Install curl
+      - name: Install prerequistes
+        id: prerequistes
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
-            apt-get update
-            apt-get install -y sudo, curl, iptables
-            #sudo apt-get install -y curl
+            if ! command -v sudo &> /dev/null
+            then
+                apt-get update
+                apt-get install -y sudo
+            fi
+            sudo apt-get install -y curl iptables
+            echo "USER=$(whoami)"  >> $GITHUB_OUTPUT
       - name: Download Tailscale
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
@@ -120,17 +125,12 @@ runs:
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
-          if [ "${{ inputs['containerMode'] }}" = true ]; then
-            sudo mkdir -p /dev/net
-            if [ ! -e /dev/net/tun ]
-            then
-              sudo mknod /dev/net/tun c 10 200
-            fi
-            #sudo apt-get install -y iptables
-            sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
-          else
-            sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
+          sudo mkdir -p /dev/net
+          if [ ! -e /dev/net/tun ]
+          then
+            sudo mknod /dev/net/tun c 10 200
           fi
+          sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           # And check that tailscaled came up. The CLI will block for a bit waiting
           # for it. And --json will make it exit with status 0 even if we're logged
           # out (as we will be). Without --json it returns an error if we're not up.
@@ -209,7 +209,7 @@ runs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "start your VPN (tailscale) and : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
+                    "text": "start your VPN (tailscale) and : `ssh ${{ steps.prerequistes.outputs.USER }}@${{ steps.tailscale.outputs.TS_IP }} `"
                   }
                 }
               ]
@@ -221,11 +221,5 @@ runs:
         if: ${{ inputs.debugEnabled == 'true' || inputs.debug == 'true'}}
         shell: bash
         run: |
-          if [ "${{ inputs['containerMode'] }}" = true ]; then
             echo "WAN IP"
             curl ifconfig.me/ip
-          else
-            echo "WAN IP"
-            curl ifconfig.me/ip
-          fi
-
