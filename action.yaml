@@ -157,17 +157,7 @@ runs:
       - name: Network Test
         shell: bash
         run: |
-          maxRetry=5
-          retry=1
-          while  [ $retry -lt $maxRetry ]
-          do
-            echo "Tailscale network test trying ($retry to $maxRetry)"
-            result=$(curl -Is https://status.taildb5d.ts.net/status/default | head -n 1 | cut -d$' ' -f2)
-            echo "Network test result: $result"
-            if [[ $result == 200 ]]; then break; fi
-            sleep 5s
-            retry=$((retry+1))
-          done
+          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 https://status.taildb5d.ts.net/status/default
       - name: Send SSH informations to Slack channel
         if: ${{ steps.check-ts-key.outputs.CONTINUE && inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
