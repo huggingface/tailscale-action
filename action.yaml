@@ -151,8 +151,13 @@ runs:
             ADDITIONAL_ARGS+=" --ssh"
             echo "with SSH"
           fi
-          timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-routes ${ADDITIONAL_ARGS}
+          timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=true --accept-routes ${ADDITIONAL_ARGS}
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
+        
+      - name: Network Test
+        shell: bash
+        run: |
+          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 https://status.taildb5d.ts.net/status/default
       - name: Send SSH informations to Slack channel
         if: ${{ steps.check-ts-key.outputs.CONTINUE && inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
