@@ -77,8 +77,9 @@ runs:
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
-            sudo apt-get update
-            sudo apt-get install -y curl
+            apt-get update
+            apt-get install -y sudo, curl, iptables
+            #sudo apt-get install -y curl
       - name: Download Tailscale
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
@@ -125,7 +126,7 @@ runs:
             then
               sudo mknod /dev/net/tun c 10 200
             fi
-            sudo apt-get install -y iptables
+            #sudo apt-get install -y iptables
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           else
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
