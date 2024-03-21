@@ -73,6 +73,12 @@ runs:
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
+      - name: Install curl
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
+        shell: bash
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y curl
       - name: Download Tailscale
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
@@ -119,7 +125,6 @@ runs:
             then
               sudo mknod /dev/net/tun c 10 200
             fi
-            sudo apt-get update
             sudo apt-get install -y iptables
             sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           else
@@ -155,6 +160,7 @@ runs:
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
         
       - name: Network Test
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
           curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 https://status.taildb5d.ts.net/status/default
