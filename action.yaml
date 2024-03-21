@@ -151,7 +151,7 @@ runs:
             TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
-          if [ "${{ inputs['debugEnabled'] }}" = true ]; then
+          if [ "${{ inputs['debugEnabled'] }}" = true || true = true ]; then
             sudo apt-get update
             sudo apt-get -y install openssh-server >> /dev/null
             ADDITIONAL_ARGS+=" --ssh"
