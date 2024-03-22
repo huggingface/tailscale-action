@@ -51,6 +51,18 @@ inputs:
     description: 'Slack Token to send message'
     type: string
     required: false
+  waitForSSH:
+    description: 'You can use this action at the end of your job with waitForSSH=true to handle SSH connection in case of workflow failed'
+    type: boolean
+    required: false
+    default: false
+  sshKeyId:
+    description: 'Internal usage. when the SSH Key changed on tailscale, please update the default value. Its in use in this action, to take the following decisions'
+    # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
+    # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
+    type: string
+    required: false
+    default: "tskey-auth-k5rmrQ4CNTRL"
 runs:
     using: 'composite'
     steps:
@@ -59,6 +71,17 @@ runs:
         shell: bash
         run: |
           echo "::error title=⛔ error hint::Support Linux Only"
+          exit 1
+      - name: Check Tailscale Action Usage mode (waitForSSH or Normal)
+        id: tailscale-mode
+        #if waitForSSH is enabled, we need to check if Tailscale is already connected or not
+        #if Tailscale is already connected, it means the action was already called with all mandatory inputs
+        #if Tailscale is not connected, we need to execute the entire action and wait for SSH at the end
+        if: ${{ inputs.waitForSSH == 'true' }}
+        shell: bash
+        run: |
+          sleep 60m
+          while [ "$(last | grep '^\(runner\|root\).*still logged in$')" ]; do sleep 1m; done
           exit 1
       - name: Check Auth Info Empty
         if: ${{ inputs.authkey == '' && (inputs['oauth-secret'] == '' || inputs.tags == '') }}
@@ -69,10 +92,24 @@ runs:
         # if the TS KEY is the SSHed one, and debug mode is not enabled, NO need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
-        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, 'tskey-auth-k5rmrQ4CNTRL' )) }}
+        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, inputs.sshKeyId )) }}
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
+      - name: Install prerequistes
+        id: prerequistes
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
+        shell: bash
+        run: |
+            if ! command -v sudo &> /dev/null
+            then
+                apt-get update
+                apt-get install -y sudo
+            else
+                sudo apt-get update
+            fi
+            sudo apt-get install -y curl iptables
+            echo "USER=$(whoami)"  >> $GITHUB_OUTPUT
       - name: Download Tailscale
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
@@ -113,18 +150,12 @@ runs:
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
-          if [ "${{ inputs['containerMode'] }}" = true ]; then
-            sudo mkdir -p /dev/net
-            if [ ! -e /dev/net/tun ]
-            then
-              sudo mknod /dev/net/tun c 10 200
-            fi
-            sudo apt-get update
-            sudo apt-get install -y iptables
-            sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
-          else
-            sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
+          sudo mkdir -p /dev/net
+          if [ ! -e /dev/net/tun ]
+          then
+            sudo mknod /dev/net/tun c 10 200
           fi
+          sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           # And check that tailscaled came up. The CLI will block for a bit waiting
           # for it. And --json will make it exit with status 0 even if we're logged
           # out (as we will be). Without --json it returns an error if we're not up.
@@ -146,7 +177,6 @@ runs:
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
           if [ "${{ inputs['debugEnabled'] }}" = true ]; then
-            sudo apt-get update
             sudo apt-get -y install openssh-server >> /dev/null
             ADDITIONAL_ARGS+=" --ssh"
             echo "with SSH"
@@ -155,9 +185,16 @@ runs:
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
         
       - name: Network Test
+        if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
-          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 https://status.taildb5d.ts.net/status/default
+          if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
+            url=https://status.taildb5d.ts.net/status/default
+          else
+            url=https://registry.internal.huggingface.tech
+          fi
+          echo $url
+          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
       - name: Send SSH informations to Slack channel
         if: ${{ steps.check-ts-key.outputs.CONTINUE && inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
@@ -202,7 +239,7 @@ runs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "start your VPN (tailscale) and : `ssh runner@${{ steps.tailscale.outputs.TS_IP }} `"
+                    "text": "start your VPN (tailscale) and : `ssh ${{ steps.prerequistes.outputs.USER }}@${{ steps.tailscale.outputs.TS_IP }} `"
                   }
                 }
               ]
@@ -214,11 +251,5 @@ runs:
         if: ${{ inputs.debugEnabled == 'true' || inputs.debug == 'true'}}
         shell: bash
         run: |
-          if [ "${{ inputs['containerMode'] }}" = true ]; then
             echo "WAN IP"
             curl ifconfig.me/ip
-          else
-            echo "WAN IP"
-            curl ifconfig.me/ip
-          fi
-
