@@ -86,7 +86,7 @@ runs:
         #if: ${{ runner.debug == '1' }}
         shell: bash
         run: |
-          if [ ${{ runner.debug }} = "1" ]; then
+          if [ ${{ runner.debug }} = 1 ]; then
             echo "debug"
           else
             echo "no debug"
