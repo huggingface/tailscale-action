@@ -36,7 +36,7 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
 
 
 ## Others options
-- `containerMode` is by default to True, because on Kubernetes, runners don't have access to TUN interface
+- `containerMode` is by default to True, because on Kubernetes, runners don't have access to TUN interface --deprecated, not used anymore
 - `debugEnabled` is provided by secrets.ACTIONS_STEP_DEBUG [Enabling debug logging feature](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging)
 - `slackChannel` and `slackToken` are used to send SSH informations on slack channel
 - `debug` is used to print out the WAN IP of tailscale tunnel
@@ -46,6 +46,6 @@ You can add this step at the end of your job, if you want to keep the session al
 ```yaml
   - name: Wait for SSH
     run : |
-      sleep 30s
-      while [ "$(last | grep '^runner.*still logged in$')" ]; do sleep 1m; done
+      sleep 2m
+      while [ "$(last | grep '^\(runner\|root\).*still logged in$')" ]; do sleep 1m; done
 ```
