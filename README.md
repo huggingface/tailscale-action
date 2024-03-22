@@ -45,6 +45,7 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
 You can add this step at the end of your job, if you want to keep the session alive (don't forget to logoff from the runner at the end)
 ```yaml
   - name: Wait for SSH
+    if: always()
     run : |
       sleep 2m
       while [ "$(last | grep '^\(runner\|root\).*still logged in$')" ]; do sleep 1m; done
