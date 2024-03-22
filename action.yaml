@@ -54,10 +54,10 @@ inputs:
 runs:
     using: 'composite'
     env:
+      sshKeyId: "tskey-auth-k5rmrQ4CNTRL"
       #when the SSH Key changed on tailscale, please update this env variable. It's in use in this action, to take the following decisions :
        # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
        # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
-      sshKeyId: "tskey-auth-k5rmrQ4CNTRL"
     steps:
       - name: Check Runner OS
         if: ${{ runner.os != 'Linux' }}
