@@ -51,13 +51,15 @@ inputs:
     description: 'Slack Token to send message'
     type: string
     required: false
+  sshKeyId:
+    description: 'Internal usage. when the SSH Key changed on tailscale, please update the default value. Its in use in this action, to take the following decisions'
+    # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
+    # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
+    type: string
+    required: false
+    default: "tskey-auth-k5rmrQ4CNTRL"
 runs:
     using: 'composite'
-    env:
-      sshKeyId: "tskey-auth-k5rmrQ4CNTRL"
-      #when the SSH Key changed on tailscale, please update this env variable. It's in use in this action, to take the following decisions :
-       # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
-       # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
     steps:
       - name: Check Runner OS
         if: ${{ runner.os != 'Linux' }}
@@ -74,7 +76,7 @@ runs:
         # if the TS KEY is the SSHed one, and debug mode is not enabled, NO need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
-        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, $sshKeyId )) }}
+        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, inputs.sshKeyId )) }}
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
@@ -170,7 +172,13 @@ runs:
         if: ${{ steps.check-ts-key.outputs.CONTINUE }}
         shell: bash
         run: |
-          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 https://status.taildb5d.ts.net/status/default
+          if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
+            url=https://status.taildb5d.ts.net/status/default
+          else
+            url=https://registry.internal.huggingface.tech
+          fi
+          echo $url
+          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
       - name: Send SSH informations to Slack channel
         if: ${{ steps.check-ts-key.outputs.CONTINUE && inputs.slackChannel != '' && inputs.debugEnabled == 'true' }}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
