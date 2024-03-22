@@ -53,6 +53,11 @@ inputs:
     required: false
 runs:
     using: 'composite'
+    env:
+      #when the SSH Key changed on tailscale, please update this env variable. It's in use in this action, to take the following decisions :
+       # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
+       # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
+      sshKeyId: "tskey-auth-k5rmrQ4CNTRL"
     steps:
       - name: Check Runner OS
         if: ${{ runner.os != 'Linux' }}
@@ -69,7 +74,7 @@ runs:
         # if the TS KEY is the SSHed one, and debug mode is not enabled, NO need to run tailscale.
       - name: Check TS Auth Key
         id: check-ts-key
-        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, 'tskey-auth-k5rmrQ4CNTRL' )) }}
+        if: ${{ !(inputs.debugEnabled == '' && startsWith( inputs.authkey, $sshKeyId )) }}
         shell: bash
         run: |
           echo "CONTINUE=true"  >> $GITHUB_OUTPUT
@@ -82,6 +87,8 @@ runs:
             then
                 apt-get update
                 apt-get install -y sudo
+            else
+                sudo apt-get update
             fi
             sudo apt-get install -y curl iptables
             echo "USER=$(whoami)"  >> $GITHUB_OUTPUT
@@ -151,8 +158,7 @@ runs:
             TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
-          if [ "${{ inputs['debugEnabled'] }}" = true || true = true ]; then
-            sudo apt-get update
+          if [ "${{ inputs['debugEnabled'] }}" = true ]; then
             sudo apt-get -y install openssh-server >> /dev/null
             ADDITIONAL_ARGS+=" --ssh"
             echo "with SSH"
