@@ -241,7 +241,7 @@ runs:
           if [ "${{ inputs['warningMessage'] }}" = true ]; then
             echo "MESSAGEHEADER=:x:JOB FAILED !"  >> $GITHUB_OUTPUT
           else
-            echo "MESSAGEHEADER=:yeux:New Job started in debug mode"  >> $GITHUB_OUTPUT
+            echo "MESSAGEHEADER=New Job started in debug mode"  >> $GITHUB_OUTPUT
           fi
       - name: Send SSH informations to Slack channel
         if: ${{ steps.tailscale-mode.outputs.WITHSSH == 'true' && env.SLACKCHANNEL != '' }}
