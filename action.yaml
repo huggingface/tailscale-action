@@ -238,6 +238,7 @@ runs:
           sudo tailscale set --ssh
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
           echo "USER=$(whoami)"  >> $GITHUB_OUTPUT
+          echo "warning message content : ${{ inputs['warningMessage'] }}"
           if [ "${{ inputs['warningMessage'] }}" = true ]; then
             echo "MESSAGEHEADER=:x:JOB FAILED !"  >> $GITHUB_OUTPUT
           else
