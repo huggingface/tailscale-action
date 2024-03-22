@@ -73,13 +73,16 @@ runs:
           echo "::error title=⛔ error hint::Support Linux Only"
           exit 1
       - name: Check Tailscale Action Usage mode (waitForSSH or Normal)
+        id: tailscale-mode
         #if waitForSSH is enabled, we need to check if Tailscale is already connected or not
         #if Tailscale is already connected, it means the action was already called with all mandatory inputs
         #if Tailscale is not connected, we need to execute the entire action and wait for SSH at the end
+        if: ${{ inputs.waitForSSH == 'true' }}
         shell: bash
         run: |
-          echo "todo"
-      
+          sleep 60m
+          while [ "$(last | grep '^\(runner\|root\).*still logged in$')" ]; do sleep 1m; done
+          exit 1
       - name: Check Auth Info Empty
         if: ${{ inputs.authkey == '' && (inputs['oauth-secret'] == '' || inputs.tags == '') }}
         shell: bash
