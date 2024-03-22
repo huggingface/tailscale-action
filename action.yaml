@@ -82,6 +82,11 @@ runs:
         run: |
           echo "::error title=⛔ error hint::Support Linux Only"
           exit 1
+      - name: check debug
+        if: ${{ runner.debug == '1' }}
+        shell: bash
+        run: |
+          echo "debug"
           
       - name: Check Tailscale Action Usage mode (waitForSSH or Normal)
         id: tailscale-mode
