@@ -98,20 +98,24 @@ runs:
             fi
           else
             #if Debug is not enabled, so we need to check why this action is called by checking AUTH_KEY : if the workflow is using SSH'ed key, and debugMode is not enabled, no need to execute Tailscale
-            if [ "${{ inputs['debugEnabled'] }}" = true ]; then
+            if [ "${{ inputs['debugEnabled'] }}" = true ]; then #debug enabled, so connect to tailscale with SSH
               echo "INSTALL=true"  >> $GITHUB_OUTPUT
               echo "WITHSSH=true"  >> $GITHUB_OUTPUT
               echo "WAITFORSSH=false"  >> $GITHUB_OUTPUT
             else
-              if [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
+              if [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then  #debug not enable, so if the Key is the SSH'ed one, no need to execute tailscale 
                 echo "INSTALL=false"  >> $GITHUB_OUTPUT
+                echo "WITHSSH=false"  >> $GITHUB_OUTPUT
+                echo "WAITFORSSH=false"  >> $GITHUB_OUTPUT
+              else #debug not enable, but need to execute tailscale because it's standard Tailscale Key
+                echo "INSTALL=true"  >> $GITHUB_OUTPUT
                 echo "WITHSSH=false"  >> $GITHUB_OUTPUT
                 echo "WAITFORSSH=false"  >> $GITHUB_OUTPUT
               fi
             fi
           fi     
       - name: Check Auth Info Empty
-        if: ${{ steps.tailscale-mode.outputs.INSTALL && inputs.authkey == '' && (inputs['oauth-secret'] == '' || inputs.tags == '') }}
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' && inputs.authkey == '' && (inputs['oauth-secret'] == '' || inputs.tags == '') }}
         shell: bash
         run: |
           echo "::error title=⛔ error hint::OAuth identity empty, Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/oauth-clients"
@@ -119,7 +123,7 @@ runs:
           
       - name: Install prerequistes
         id: prerequistes
-        if: ${{ steps.tailscale-mode.outputs.INSTALL }}
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         run: |
             if ! command -v sudo &> /dev/null
@@ -133,7 +137,7 @@ runs:
             echo "USER=$(whoami)"  >> $GITHUB_OUTPUT
             
       - name: Download Tailscale
-        if: ${{ steps.tailscale-mode.outputs.INSTALL }}
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         id: download
         env:
@@ -170,7 +174,7 @@ runs:
           sudo mv "${TSPATH}/tailscale" "${TSPATH}/tailscaled" /usr/bin
           
       - name: Start Tailscale Daemon
-        if: ${{ steps.tailscale-mode.outputs.INSTALL }}
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         run: |
           sudo mkdir -p /dev/net
@@ -185,7 +189,7 @@ runs:
           sudo -E tailscale status --json >/dev/null
           
       - name: Connect to Tailscale
-        if: ${{ steps.tailscale-mode.outputs.INSTALL }}
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         id: tailscale
         shell: bash
         env:
@@ -204,7 +208,7 @@ runs:
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
           
       - name: Network Test
-        if: ${{ steps.tailscale-mode.outputs.INSTALL }}
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         run: |
           if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
@@ -218,14 +222,14 @@ runs:
           curl ifconfig.me/ip
           
       - name: Enable SSH
-        if: ${{ steps.tailscale-mode.outputs.WITHSSH }}
+        if: ${{ steps.tailscale-mode.outputs.WITHSSH == 'true' }}
         shell: bash
         run: |
           sudo apt-get -y install openssh-server >> /dev/null
           sudo tailscale set --ssh
           
       - name: Send SSH informations to Slack channel
-        if: ${{ steps.tailscale-mode.outputs.WITHSSH && inputs.slackChannel != '' }}
+        if: ${{ steps.tailscale-mode.outputs.WITHSSH == 'true' && inputs.slackChannel != '' }}
         uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
         with:
           # Slack channel id, channel name, or user id to post message.
@@ -277,7 +281,7 @@ runs:
           SLACK_BOT_TOKEN: ${{ inputs.slackToken }}
       
       - name: Wait for SSH
-        if: ${{ steps.tailscale-mode.outputs.WAITFORSSH }}
+        if: ${{ steps.tailscale-mode.outputs.WAITFORSSH == 'true' }}
         shell: bash
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
