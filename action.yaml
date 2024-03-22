@@ -51,6 +51,11 @@ inputs:
     description: 'Slack Token to send message'
     type: string
     required: false
+  waitForSSH:
+    description: 'You can use this action at the end of your job with waitForSSH=true to handle SSH connection in case of workflow failed'
+    type: boolean
+    required: false
+    default: false
   sshKeyId:
     description: 'Internal usage. when the SSH Key changed on tailscale, please update the default value. Its in use in this action, to take the following decisions'
     # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
@@ -67,6 +72,14 @@ runs:
         run: |
           echo "::error title=⛔ error hint::Support Linux Only"
           exit 1
+      - name: Check Tailscale Action Usage mode (waitForSSH or Normal)
+        #if waitForSSH is enabled, we need to check if Tailscale is already connected or not
+        #if Tailscale is already connected, it means the action was already called with all mandatory inputs
+        #if Tailscale is not connected, we need to execute the entire action and wait for SSH at the end
+        shell: bash
+        run: |
+          echo "todo"
+      
       - name: Check Auth Info Empty
         if: ${{ inputs.authkey == '' && (inputs['oauth-secret'] == '' || inputs.tags == '') }}
         shell: bash
