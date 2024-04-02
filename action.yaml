@@ -29,12 +29,17 @@ inputs:
     required: false
     default: 'a580ac9947c291c4928f5bd6af66c6556355c5ea59b1a0172ab62a9b62d6bd77'
   containerMode:
-    description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible)'
+    description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible). DEPRECATED, not used anymore'
     type: boolean
     required: false
     default: true
   debug:
     description: 'This mode generate the tailscale bug report'
+    type: boolean
+    required: false
+    default: false
+  debugEnabled:
+    description: 'This mode will allow to SSH to the runner. DEPRECATED, not used, replaced by github runner variable'
     type: boolean
     required: false
     default: false
