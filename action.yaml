@@ -38,11 +38,6 @@ inputs:
     type: boolean
     required: false
     default: false
-  debugEnabled:
-    description: 'This mode will allow to SSH to the runner'
-    type: boolean
-    required: false
-    default: false
   slackChannel:
     description: 'Provide Slack Channel to send SSH information'
     type: string
@@ -53,11 +48,6 @@ inputs:
     required: false
   waitForSSH:
     description: 'You can use this action at the end of your job with waitForSSH=true to handle SSH connection in case of workflow failed'
-    type: boolean
-    required: false
-    default: false
-  warningMessage:
-    description: 'Use to send warning flag on slack when sending SSH credentials'
     type: boolean
     required: false
     default: false
@@ -111,13 +101,13 @@ runs:
               echo "WAITFORSSH=true"  >> $GITHUB_OUTPUT
             fi
           else
-            #if Debug is not enabled, so we need to check why this action is called by checking AUTH_KEY : if the workflow is using SSH'ed key, and debugMode is not enabled, no need to execute Tailscale
-            if [ "${{ inputs['debugEnabled'] }}" = true ]; then #debug enabled, so connect to tailscale with SSH
+            #if Debug is not enabled, so we need to check why this action is called by checking AUTH_KEY : if the workflow is using SSH'ed key, and debug is not enabled, no need to execute Tailscale
+            if [ "${{ runner.debug }}" = "1" ]; then #debug enabled, so connect to tailscale with SSH
               echo "INSTALL=true"  >> $GITHUB_OUTPUT
               echo "WITHSSH=true"  >> $GITHUB_OUTPUT
               echo "WAITFORSSH=false"  >> $GITHUB_OUTPUT
             else
-              if [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then  #debug not enable, so if the Key is the SSH'ed one, no need to execute tailscale 
+              if [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then  #debug not enabled, so if the Key is the SSH'ed one, no need to execute tailscale 
                 echo "INSTALL=false"  >> $GITHUB_OUTPUT
                 echo "WITHSSH=false"  >> $GITHUB_OUTPUT
                 echo "WAITFORSSH=false"  >> $GITHUB_OUTPUT
@@ -248,10 +238,10 @@ runs:
           echo "TS_IP=$(tailscale ip --4)"  >> $GITHUB_OUTPUT
           echo "USER=$(whoami)"  >> $GITHUB_OUTPUT
           echo "warning message content : ${{ inputs['warningMessage'] }}"
-          if [ "${{ inputs['warningMessage'] }}" = true ]; then
-            echo "MESSAGEHEADER=:x:JOB FAILED !"  >> $GITHUB_OUTPUT
-          else
+          if [ "${{ runner.debug }}" = "1" ]; then
             echo "MESSAGEHEADER=New Job started in debug mode"  >> $GITHUB_OUTPUT
+          else
+            echo "MESSAGEHEADER=:x:JOB FAILED !"  >> $GITHUB_OUTPUT
           fi
       - name: Send SSH informations to Slack channel
         if: ${{ steps.tailscale-mode.outputs.WITHSSH == 'true' && env.SLACKCHANNEL != '' }}
@@ -310,4 +300,4 @@ runs:
         shell: bash
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
-            while [ "$(last | grep '^\(runner\|root\).*still logged in$')" ]; do sleep 1m; done
+            while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
