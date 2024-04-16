@@ -2,6 +2,9 @@
 Hugging Face Github action to connect to tailscale (Based from https://github.com/tailscale/github-action)
 
 You can use this github action for 2 differents use cases :
+- Access to internal shared ressources (like registry)
+- Log in SSH on the runner in order to debug the workflow
+In the first case, you can also configure Tailscale to automatically start SSH server in case of job failure
 
 # Access to internal shared ressources (like registry)
 
@@ -14,39 +17,66 @@ Ask for the TAILSCALE_AUTHKEY secret and add this step to your workflow.
       authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 ```
 
-
-
-# Log in SSH on the runner in order to debug the workflow
-
-- Add this step to your workflow (`TAILSCALE_SSH_AUTHKEY`, `SLACK_CIFEEDBACK_CHANNEL`, `SLACK_CIFEEDBACK_BOT_TOKEN` already available on all repos)
-- Re-Run your Job with `Enable debug logging` on the github popup
-- Join the slack channel #github-runners, you will receive a slack message.
-
-**WARNING : if you have a workflow with a lot of jobs, don't run your workflow with `Enable debug logging`**
+You can configure This Tailscale Action to run dynamically an SSH server on your runner if a step failed, or if you started your job with debug mode.
+In this case, you have to add 2 inputs for slack notification and add a "wait" step at the end of your job
 
 ```yaml
   - name: Tailscale
     uses: huggingface/tailscale-action@main
     with:
-      authkey: ${{ secrets.TAILSCALE_SSH_AUTHKEY }}
-      debugEnabled: ${{ secrets.ACTIONS_STEP_DEBUG }}
+      authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
       slackChannel: ${{ secrets.SLACK_CIFEEDBACK_CHANNEL }}
       slackToken: ${{ secrets.SLACK_CIFEEDBACK_BOT_TOKEN }}
 ```
 
+```yaml
+  - name: Tailscale Wait
+    if: ${{ failure() || runner.debug == '1' }}
+    uses: huggingface/tailscale-action@main
+    with:
+       waitForSSH: true
+```
+
+# Log in SSH on the runner in order to debug the workflow
+
+
+- Add this step at the end of your job (`TAILSCALE_SSH_AUTHKEY`, `SLACK_CIFEEDBACK_CHANNEL`, `SLACK_CIFEEDBACK_BOT_TOKEN` already available on all repos)
+- Re-Run your Job with `Enable debug logging` on the github popup
+- Join the slack channel #github-runners, you will receive a slack message.
+
+```yaml
+  - name: Tailscale Wait
+    if: ${{ failure() || runner.debug == '1' }}
+    uses: huggingface/tailscale-action@main
+    with:
+       waitForSSH: true
+       authkey: ${{ secrets.TAILSCALE_SSH_AUTHKEY }}
+       slackChannel: ${{ secrets.SLACK_CIFEEDBACK_CHANNEL }}
+       slackToken: ${{ secrets.SLACK_CIFEEDBACK_BOT_TOKEN }}
+```
+
+**WARNING : if you have a workflow with a lot of jobs, don't run your workflow with `Enable debug logging`**
+
+Tooltip : If you want to connect to the runner at the start of your workflow, to be able to debug during steps 
+- add the Tailscale action Step at the start of your job
+- Add the Tailscale Wait action at the end
+
+```yaml
+  - name: Tailscale
+          uses: huggingface/tailscale-action@main
+          with:
+            authkey: ${{ secrets.TAILSCALE_SSH_AUTHKEY }}
+            slackChannel: ${{ secrets.SLACK_CIFEEDBACK_CHANNEL }}
+            slackToken: ${{ secrets.SLACK_CIFEEDBACK_BOT_TOKEN }}
+  .....
+
+  - name: Tailscale Wait
+    if: ${{ failure() || runner.debug == '1' }}
+    uses: huggingface/tailscale-action@main
+    with:
+       waitForSSH: true
+```
 
 ## Others options
-- `containerMode` is by default to True, because on Kubernetes, runners don't have access to TUN interface --deprecated, not used anymore
-- `debugEnabled` is provided by secrets.ACTIONS_STEP_DEBUG [Enabling debug logging feature](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging)
-- `slackChannel` and `slackToken` are used to send SSH informations on slack channel
-- `debug` is used to print out the WAN IP of tailscale tunnel
-- `version` is used to overwrite the default version use in this action. You will need to provide `sha256sum` as well.
 
-You can add this step at the end of your job, if you want to keep the session alive (don't forget to logoff from the runner at the end)
-```yaml
-  - name: Wait for SSH
-    if: always()
-    run : |
-      sleep 2m
-      while [ "$(last | grep '^\(runner\|root\).*still logged in$')" ]; do sleep 1m; done
-```
+- `sshTimeout` : by default Tailscale is waiting 5 minutes before terminating the job. You can increase this time.
