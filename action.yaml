@@ -67,7 +67,7 @@ inputs:
     # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
     type: string
     required: false
-    default: "tskey-auth-k5rmrQ4CNTRL"
+    default: "tskey-auth-kJn4TvH6jB11CNTRL"
 runs:
     using: 'composite'
     steps:
