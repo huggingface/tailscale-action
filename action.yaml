@@ -27,7 +27,7 @@ inputs:
   sha256sum:
     description: 'Expected SHA256 checksum of the tarball.'
     required: false
-    default: 'a580ac9947c291c4928f5bd6af66c6556355c5ea59b1a0172ab62a9b62d6bd77'
+    default: '18edc3067c41bfbcd6eeffeab45d93e10566219cb0ebb78a0f59eba56acc37e3'
   containerMode:
     description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible). DEPRECATED, not used anymore'
     type: boolean
