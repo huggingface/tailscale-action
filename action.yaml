@@ -68,6 +68,9 @@ inputs:
     type: string
     required: false
     default: "tskey-auth-kJn4TvH6jB11CNTRL"
+  url:
+    type: string
+    required: false
 runs:
     using: 'composite'
     steps:
@@ -217,13 +220,6 @@ runs:
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         run: |
-          if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
-            url=https://status.taildb5d.ts.net/status/default
-          else
-            url=https://registry.internal.huggingface.tech
-          fi
-          echo $url
-          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
           echo "WAN IP:"
           curl ifconfig.me/ip
       - name: Store Slack infos
