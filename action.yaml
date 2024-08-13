@@ -212,20 +212,20 @@ runs:
           fi
           timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=true --accept-routes ${ADDITIONAL_ARGS}
           
-          
-      - name: Network Test
-        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
-        shell: bash
-        run: |
-          if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
-            url=https://status.taildb5d.ts.net/status/default
-          else
-            url=https://registry.internal.huggingface.tech
-          fi
-          echo $url
-          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
-          echo "WAN IP:"
-          curl ifconfig.me/ip
+      #we don't need network test anymore, because we are not using tailscale on CI for accessing registry    
+      #- name: Network Test
+      #  if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
+      #  shell: bash
+      #  run: |
+      #    if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
+      #      url=https://status.taildb5d.ts.net/status/default
+      #    else
+      #      url=https://registry.internal.huggingface.tech
+      #    fi
+      #    echo $url
+      #    curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
+      #    echo "WAN IP:"
+      #    curl ifconfig.me/ip
       - name: Store Slack infos
         #because the SSH can be enabled dynamically if the workflow failed, so we need to store slack infos to be able to retrieve them during the waitforssh step
         if: ${{  inputs.slackChannel != '' }}
