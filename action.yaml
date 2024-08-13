@@ -48,6 +48,11 @@ inputs:
     type: boolean
     required: false
     default: true
+  acceptRoutes:
+    description: ''
+    type: boolean
+    required: false
+    default: true
   slackChannel:
     description: 'Provide Slack Channel to send SSH information'
     type: string
@@ -208,6 +213,7 @@ runs:
           HOSTNAME: ${{ inputs.hostname }}
           TS_EXPERIMENT_OAUTH_AUTHKEY: true
           DNS: ${{ inputs.acceptDns }}
+          ACCEPT_ROUTES: ${{ inputs.acceptRoutes }}
         run: |
           if [ -z "${HOSTNAME}" ]; then
             HOSTNAME="github-$(cat /etc/hostname)"
@@ -216,7 +222,7 @@ runs:
             TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
             TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
           fi
-          timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=${DNS} --accept-routes ${ADDITIONAL_ARGS}
+          timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=${DNS} --accept-routes=${ACCEPT_ROUTES} ${ADDITIONAL_ARGS}
           
       #we don't need network test anymore, because we are not using tailscale on CI for accessing registry    
       #- name: Network Test
