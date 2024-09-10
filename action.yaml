@@ -216,7 +216,7 @@ runs:
           ACCEPT_ROUTES: ${{ inputs.acceptRoutes }}
         run: |
           if [ -z "${HOSTNAME}" ]; then
-            HOSTNAME="github-$(cat /etc/hostname)"
+            HOSTNAME="gh-$(cat /etc/hostname)"
           fi
           if [ -n "${{ inputs['oauth-secret'] }}" ]; then
             TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
