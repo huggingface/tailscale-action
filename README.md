@@ -49,3 +49,15 @@ You can add this step at the end of your job, if you want to keep the session al
       sleep 30s
       while [ "$(last | grep '^runner.*still logged in$')" ]; do sleep 1m; done
 ```
+
+## SSH Debug
+
+This will simply wait on this action so you can log in onto the runner with SSH.
+
+```yaml
+- name: Tailscale
+    uses: huggingface/tailscale-action@main
+    with:
+      authkey: ${{ secrets.TAILSCALE_SSH_AUTHKEY }}
+      waitForSSH: true
+```
