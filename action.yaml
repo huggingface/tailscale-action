@@ -23,11 +23,11 @@ inputs:
   version:
     description: 'Tailscale version to use.'
     required: true
-    default: '1.68.1'
+    default: '1.84.0'
   sha256sum:
     description: 'Expected SHA256 checksum of the tarball.'
     required: false
-    default: '18edc3067c41bfbcd6eeffeab45d93e10566219cb0ebb78a0f59eba56acc37e3'
+    default: 'c91eb43a92c209108bfaf1237696ac2089cc3d8fcf35d570d348cbfb19d8fb31'
   containerMode:
     description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible). DEPRECATED, not used anymore'
     type: boolean
@@ -71,6 +71,11 @@ inputs:
     type: string
     required: false
     default: "5m"
+  networkTest:
+    description: 'You can choose to test the network route because some time it can take up to 10sec to mount, and the CI can fail'
+    type: boolean
+    required: false
+    default: false
   sshKeyId:
     description: 'Internal usage. when the SSH Key changed on tailscale, please update the default value. Its in use in this action, to take the following decisions'
     # - if this key is used on the WF, and debug mode is not enabled during action run, no need to connect to tailscale
@@ -224,20 +229,17 @@ runs:
           fi
           timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=${DNS} --accept-routes=${ACCEPT_ROUTES} ${ADDITIONAL_ARGS}
           
-      #we don't need network test anymore, because we are not using tailscale on CI for accessing registry    
-      #- name: Network Test
-      #  if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
-      #  shell: bash
-      #  run: |
-      #    if  [[ "${{ inputs['authkey'] }}" =~ "${{ inputs['sshKeyId'] }}" ]]; then 
-      #      url=https://status.taildb5d.ts.net/status/default
-      #    else
-      #      url=https://registry.internal.huggingface.tech
-      #    fi
-      #    echo $url
-      #    curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
-      #    echo "WAN IP:"
-      #    curl ifconfig.me/ip
+      #for CI who is using tailscale  for accessing registry    
+      - name: Network Test
+       if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' && inputs.networkTest == 'true'}}
+       shell: bash
+       run: |
+           url=https://registry.internal.huggingface.tech
+         echo $url
+         curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
+         echo "WAN IP:"
+         curl ifconfig.me/ip
+         
       - name: Store Slack infos
         #because the SSH can be enabled dynamically if the workflow failed, so we need to store slack infos to be able to retrieve them during the waitforssh step
         if: ${{  inputs.slackChannel != '' }}
