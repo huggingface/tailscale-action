@@ -231,9 +231,9 @@ runs:
           
       #for CI who is using tailscale  for accessing registry    
       - name: Network Test
-       if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' && inputs.networkTest == 'true'}}
-       shell: bash
-       run: |
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' && inputs.networkTest == 'true'}}
+        shell: bash
+        run: |
            url=https://registry.internal.huggingface.tech
          echo $url
          curl --head -X GET --retry 30 --retry-connrefused --retry-delay 1 $url
