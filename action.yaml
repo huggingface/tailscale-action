@@ -82,7 +82,7 @@ inputs:
     # - if tailscale is used for something else than SSH (like internal ressources access), so we are testing internal url access.
     type: string
     required: false
-    default: "tskey-auth-kxuTtXxpzo11CNTRL"
+    default: "tskey-auth-k4gTuFfHSN11CNTRL"
 runs:
     using: 'composite'
     steps:
@@ -320,3 +320,4 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
