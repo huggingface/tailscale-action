@@ -208,7 +208,7 @@ runs:
           # And check that tailscaled came up. The CLI will block for a bit waiting
           # for it. And --json will make it exit with status 0 even if we're logged
           # out (as we will be). Without --json it returns an error if we're not up.
-          sudo -E tailscale status --json >/dev/null
+          sudo -E tailscale status >/dev/null
           
       - name: Connect to Tailscale
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
@@ -320,4 +320,5 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
