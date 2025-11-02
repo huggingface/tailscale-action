@@ -199,11 +199,11 @@ runs:
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         run: |
-          sudo mkdir -p /dev/net
-          if [ ! -e /dev/net/tun ]
-          then
-            sudo mknod /dev/net/tun c 10 200
-          fi
+          #sudo mkdir -p /dev/net
+          #if [ ! -e /dev/net/tun ]
+          #then
+          #  sudo mknod /dev/net/tun c 10 200
+          #fi
           sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
           # And check that tailscaled came up. The CLI will block for a bit waiting
           # for it. And --json will make it exit with status 0 even if we're logged
@@ -320,6 +320,7 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
 
 
