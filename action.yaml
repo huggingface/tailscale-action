@@ -228,6 +228,15 @@ runs:
       #      TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
       #    fi
       #    timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=${DNS} --accept-routes=${ACCEPT_ROUTES} ${ADDITIONAL_ARGS}
+      - name: Tailscale Pod Prepare
+        #in case of running tailscale on POD with NET_ADMIN permission only
+        shell: bash
+        run: |
+          sudo mkdir -p /dev/net
+          if [ ! -e /dev/net/tun ]
+          then
+            sudo mknod /dev/net/tun c 10 200
+          fi
       - name: Tailscale Args compilation
         id: tailscale-args
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
@@ -340,6 +349,7 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
 
 
