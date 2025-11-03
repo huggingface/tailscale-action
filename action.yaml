@@ -242,7 +242,7 @@ runs:
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ inputs.authkey }}
-          #tags: ${{ inputs.tags }}
+          tags: ${{ inputs.tags }}
           #oauth-client-id: ${{ inputs.oauth-client-id }}
           #oauth-secret: ${{ inputs.oauth-secret }}
           #hostname: ${{ inputs.hostname }}
@@ -339,6 +339,7 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
 
 
