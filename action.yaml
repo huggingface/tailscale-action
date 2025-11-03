@@ -28,11 +28,6 @@ inputs:
     description: 'Expected SHA256 checksum of the tarball.'
     required: false
     default: 'c91eb43a92c209108bfaf1237696ac2089cc3d8fcf35d570d348cbfb19d8fb31'
-  containerMode:
-    description: 'This mode will use the Userspace networking mode (specially for container where tunnel VPN is not possible). DEPRECATED, not used anymore'
-    type: boolean
-    required: false
-    default: true
   debug:
     description: 'This mode generate the tailscale bug report'
     type: boolean
@@ -49,7 +44,7 @@ inputs:
     required: false
     default: true
   acceptRoutes:
-    description: ''
+    description: 'DEPRECATED, not used anymore'
     type: boolean
     required: false
     default: true
@@ -158,45 +153,8 @@ runs:
             fi
             sudo apt-get install -y curl iptables
             
-      - name: Download Tailscale
-        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
-        shell: bash
-        id: download
-        env:
-          VERSION: ${{ inputs.version }}
-          SHA256SUM: ${{ inputs.sha256sum }}
-        run: |
-          if [ ${{ runner.arch }} = "ARM64" ]; then
-            TS_ARCH="arm64"
-          elif [ ${{ runner.arch }} = "ARM" ]; then
-            TS_ARCH="arm"
-          elif [ ${{ runner.arch }} = "X86" ]; then
-            TS_ARCH="386"
-          elif [ ${{ runner.arch }} = "X64" ]; then
-            TS_ARCH="amd64"
-          else
-            TS_ARCH="amd64"
-          fi
-          MINOR=$(echo "$VERSION" | awk -F '.' {'print $2'})
-          if [ $((MINOR % 2)) -eq 0 ]; then
-            URL="https://pkgs.tailscale.com/stable/tailscale_${VERSION}_${TS_ARCH}.tgz"
-          else
-            URL="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_${TS_ARCH}.tgz"
-          fi
-          if ! [[ "$SHA256SUM" ]] ; then
-            SHA256SUM="$(curl -H user-agent:tailscale-github-action -L "${URL}.sha256")"
-          fi
-          curl -H user-agent:tailscale-github-action -L "$URL" -o tailscale.tgz --max-time 300
-          echo "Expected sha256: $SHA256SUM"
-          echo "Actual sha256: $(sha256sum tailscale.tgz)"
-          echo "$SHA256SUM  tailscale.tgz" | sha256sum -c
-          tar -C /tmp -xzf tailscale.tgz
-          rm tailscale.tgz
-          TSPATH=/tmp/tailscale_${VERSION}_${TS_ARCH}
-          sudo mv "${TSPATH}/tailscale" "${TSPATH}/tailscaled" /usr/bin
-          
-      - name: Start Tailscale Daemon
-        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
+      - name: Tailscale Pod Prepare
+        #in case of running tailscale on POD with NET_ADMIN permission only
         shell: bash
         run: |
           sudo mkdir -p /dev/net
@@ -204,30 +162,26 @@ runs:
           then
             sudo mknod /dev/net/tun c 10 200
           fi
-          sudo -E tailscaled --state=mem: 2>~/tailscaled.log &
-          # And check that tailscaled came up. The CLI will block for a bit waiting
-          # for it. And --json will make it exit with status 0 even if we're logged
-          # out (as we will be). Without --json it returns an error if we're not up.
-          sudo -E tailscale status --json >/dev/null
-          
-      - name: Connect to Tailscale
+      - name: Tailscale Args compilation
+        id: tailscale-args
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         shell: bash
         env:
-          TAILSCALE_AUTHKEY: ${{ inputs.authkey }}
-          HOSTNAME: ${{ inputs.hostname }}
-          TS_EXPERIMENT_OAUTH_AUTHKEY: true
           DNS: ${{ inputs.acceptDns }}
           ACCEPT_ROUTES: ${{ inputs.acceptRoutes }}
         run: |
-          if [ -z "${HOSTNAME}" ]; then
-            HOSTNAME="gh-$(cat /etc/hostname)"
-          fi
-          if [ -n "${{ inputs['oauth-secret'] }}" ]; then
-            TAILSCALE_AUTHKEY="${{ inputs['oauth-secret'] }}?preauthorized=true&ephemeral=true"
-            TAGS_ARG="--advertise-tags=${{ inputs.tags }}"
-          fi
-          timeout 5m sudo -E tailscale up ${TAGS_ARG} --authkey=${TAILSCALE_AUTHKEY} --hostname=${HOSTNAME} --accept-dns=${DNS} --accept-routes=${ACCEPT_ROUTES} ${ADDITIONAL_ARGS}
+          # --accept-routes is now by default true on tailscale action
+          echo "ARGS=--accept-dns=${DNS}"  >> $GITHUB_OUTPUT
+      - name: Tailscale Install & Setup
+        if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ inputs.authkey }}
+          tags: ${{ inputs.tags }}
+          oauth-client-id: ${{ inputs.oauth-client-id }}
+          oauth-secret: ${{ inputs.oauth-secret }}
+          hostname: ${{ inputs.hostname }}
+          args: ${{ steps.tailscale-args.outputs.ARGS }}
           
       #for CI who is using tailscale  for accessing registry    
       - name: Network Test
@@ -320,6 +274,3 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
-
-
-
