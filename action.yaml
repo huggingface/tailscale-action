@@ -274,12 +274,3 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
-
-
-
-
-
-
-
-
-
