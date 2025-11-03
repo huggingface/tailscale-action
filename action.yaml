@@ -243,8 +243,8 @@ runs:
         with:
           authkey: ${{ inputs.authkey }}
           tags: ${{ inputs.tags }}
-          oauth-client-id: ${{ inputs.oauth-client-id }}
-          oauth-secret: ${{ inputs.oauth-secret }}
+          #oauth-client-id: ${{ inputs.oauth-client-id }}
+          #oauth-secret: ${{ inputs.oauth-secret }}
           hostname: ${{ inputs.hostname }}
           args: ${{ steps.tailscale-args.outputs.ARGS }}
           
@@ -339,5 +339,6 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
 
