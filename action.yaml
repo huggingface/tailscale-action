@@ -236,7 +236,7 @@ runs:
           DNS: ${{ inputs.acceptDns }}
           ACCEPT_ROUTES: ${{ inputs.acceptRoutes }}
         run: |
-        #--accept-routes is now by default true on tailscale action
+          # --accept-routes is now by default true on tailscale action
           echo "ARGS=--accept-dns=${DNS}"  >> $GITHUB_OUTPUT
       - name: Tailscale Install & Setup
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
@@ -340,6 +340,7 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
 
 
