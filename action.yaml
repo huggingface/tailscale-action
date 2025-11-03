@@ -236,17 +236,18 @@ runs:
           DNS: ${{ inputs.acceptDns }}
           ACCEPT_ROUTES: ${{ inputs.acceptRoutes }}
         run: |
-          echo "ARGS=--accept-dns=${DNS} --accept-routes=${ACCEPT_ROUTES}"  >> $GITHUB_OUTPUT
+        #--accept-routes is now by default true on tailscale action
+          echo "ARGS=--accept-dns=${DNS}"  >> $GITHUB_OUTPUT
       - name: Tailscale Install & Setup
         if: ${{ steps.tailscale-mode.outputs.INSTALL == 'true' }}
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ inputs.authkey }}
           tags: ${{ inputs.tags }}
-          #oauth-client-id: ${{ inputs.oauth-client-id }}
-          #oauth-secret: ${{ inputs.oauth-secret }}
-          #hostname: ${{ inputs.hostname }}
-          #args: ${{ steps.tailscale-args.outputs.ARGS }}
+          oauth-client-id: ${{ inputs.oauth-client-id }}
+          oauth-secret: ${{ inputs.oauth-secret }}
+          hostname: ${{ inputs.hostname }}
+          args: ${{ steps.tailscale-args.outputs.ARGS }}
           
       #for CI who is using tailscale  for accessing registry    
       - name: Network Test
@@ -339,6 +340,7 @@ runs:
         run: |
             sleep "${{ inputs['sshTimeout'] }}"
             while [ "$(last | grep '^\(ubuntu\|runner\|root\).*still logged in$')" ]; do sleep 1m; done
+
 
 
 
