@@ -182,6 +182,7 @@ runs:
           oauth-secret: ${{ inputs.oauth-secret }}
           hostname: ${{ inputs.hostname }}
           args: ${{ steps.tailscale-args.outputs.ARGS }}
+          tailscaled-args: --state=/var/lib/tailscale/tailscale.state
           
       #for CI who is using tailscale  for accessing registry    
       - name: Network Test
